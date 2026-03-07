@@ -14,7 +14,7 @@ export default function MonthFilter({ selectedMonth, selectedYear, onChange }: P
   return (
     <div className="flex gap-3 items-center">
       <select
-        className="flex-1 text-lg p-3 rounded-xl border-2 border-gray-200 bg-white font-medium"
+        className="flex-1 text-lg p-3 rounded-xl font-semibold bg-white text-green-800 border-0 shadow-sm"
         value={selectedMonth}
         onChange={e => onChange(parseInt(e.target.value), selectedYear)}
       >
@@ -23,7 +23,7 @@ export default function MonthFilter({ selectedMonth, selectedYear, onChange }: P
         ))}
       </select>
       <select
-        className="text-lg p-3 rounded-xl border-2 border-gray-200 bg-white font-medium"
+        className="text-lg p-3 rounded-xl font-semibold bg-white text-green-800 border-0 shadow-sm"
         value={selectedYear}
         onChange={e => onChange(selectedMonth, parseInt(e.target.value))}
       >

@@ -6,6 +6,7 @@ function getDropboxClient(): Dropbox {
     clientId: process.env.DROPBOX_APP_KEY!,
     clientSecret: process.env.DROPBOX_APP_SECRET!,
     refreshToken: process.env.DROPBOX_REFRESH_TOKEN!,
+    fetch: fetch,
   });
 }
 
@@ -17,11 +18,12 @@ export async function readTicketsJson(year: number): Promise<Ticket[]> {
   const dbx = getDropboxClient();
   const path = `${getYearPath(year)}/tickets.json`;
   try {
-    const response = await dbx.filesDownload({ path }) as unknown as { result: { fileBlob: Blob } };
-    const buffer = Buffer.from(await response.result.fileBlob.arrayBuffer());
-    return JSON.parse(buffer.toString('utf-8'));
+    // In Node.js (server), Dropbox SDK returns fileBinary (Buffer), not fileBlob
+    const response = await dbx.filesDownload({ path }) as unknown as { result: { fileBinary: Buffer } };
+    return JSON.parse(response.result.fileBinary.toString('utf-8'));
   } catch (err: unknown) {
-    if ((err as { status?: number })?.status === 409) return [];
+    const status = (err as { status?: number })?.status;
+    if (status === 409 || status === 404) return [];
     throw err;
   }
 }

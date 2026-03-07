@@ -1,8 +1,9 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CATEGORIES } from '@/lib/constants';
 import imageCompression from 'browser-image-compression';
+import { getPendingPhoto, clearPendingPhoto } from '@/lib/photoStore';
 
 function todayString(): string {
   return new Date().toISOString().split('T')[0];
@@ -18,6 +19,16 @@ export default function AddPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Récupérer la photo prise depuis la home page
+  useEffect(() => {
+    const pending = getPendingPhoto();
+    if (pending) {
+      setPhoto(pending);
+      setPhotoPreview(URL.createObjectURL(pending));
+      clearPendingPhoto();
+    }
+  }, []);
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];

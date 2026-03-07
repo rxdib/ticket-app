@@ -5,22 +5,28 @@ import type { Ticket } from '@/lib/types';
 import { randomBytes } from 'crypto';
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const yearParam = searchParams.get('year') ?? String(new Date().getFullYear());
-  const monthParam = searchParams.get('month');
+  try {
+    const { searchParams } = new URL(request.url);
+    const yearParam = searchParams.get('year') ?? String(new Date().getFullYear());
+    const monthParam = searchParams.get('month');
 
-  const year = parseInt(yearParam);
-  const tickets = await readTicketsJson(year);
+    const year = parseInt(yearParam);
+    const tickets = await readTicketsJson(year);
 
-  let filtered = tickets;
-  if (monthParam !== null) {
-    const month = parseInt(monthParam);
-    filtered = tickets.filter(t => new Date(t.date).getMonth() === month);
+    let filtered = tickets;
+    if (monthParam !== null) {
+      const month = parseInt(monthParam);
+      filtered = tickets.filter(t => new Date(t.date).getMonth() === month);
+    }
+
+    filtered.sort((a, b) => b.date.localeCompare(a.date));
+
+    return NextResponse.json(filtered);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : JSON.stringify(err);
+    console.error('[GET /api/tickets]', message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  filtered.sort((a, b) => b.date.localeCompare(a.date));
-
-  return NextResponse.json(filtered);
 }
 
 export async function POST(request: NextRequest) {

@@ -1,16 +1,32 @@
 'use client';
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import TicketList from './components/TicketList';
 import MonthFilter from './components/MonthFilter';
 import type { Ticket } from '@/lib/types';
+import { setPendingPhoto } from '@/lib/photoStore';
+import imageCompression from 'browser-image-compression';
 
 export default function HomePage() {
   const now = new Date();
+  const router = useRouter();
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
+
+  async function handleCameraCapture(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const compressed = await imageCompression(file, {
+      maxSizeMB: 1.5,
+      maxWidthOrHeight: 1920,
+      useWebWorker: true,
+    });
+    setPendingPhoto(compressed);
+    router.push('/add');
+  }
 
   async function fetchTickets(month: number, year: number) {
     setLoading(true);
@@ -57,14 +73,22 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* Bouton ajouter */}
+      {/* Bouton ajouter — ouvre la caméra directement */}
       <div className="fixed bottom-8 left-0 right-0 flex justify-center px-5">
-        <Link
-          href="/add"
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={handleCameraCapture}
+        />
+        <button
+          onClick={() => cameraInputRef.current?.click()}
           className="w-full max-w-lg bg-green-700 text-white text-xl font-bold py-5 rounded-2xl text-center shadow-lg active:bg-green-800"
         >
-          + Ajouter un ticket
-        </Link>
+          📷 Nouveau ticket
+        </button>
       </div>
     </div>
   );
