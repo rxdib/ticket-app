@@ -30,9 +30,13 @@ export default function HomePage() {
 
   async function fetchTickets(month: number, year: number) {
     setLoading(true);
-    const res = await fetch(`/api/tickets?month=${month}&year=${year}`);
-    const data = await res.json();
-    setTickets(data);
+    try {
+      const res = await fetch(`/api/tickets?month=${month}&year=${year}`);
+      const data = await res.json();
+      setTickets(Array.isArray(data) ? data : []);
+    } catch {
+      setTickets([]);
+    }
     setLoading(false);
   }
 

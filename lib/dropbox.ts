@@ -18,9 +18,19 @@ export async function readTicketsJson(year: number): Promise<Ticket[]> {
   const dbx = getDropboxClient();
   const path = `${getYearPath(year)}/tickets.json`;
   try {
-    // In Node.js (server), Dropbox SDK returns fileBinary (Buffer), not fileBlob
-    const response = await dbx.filesDownload({ path }) as unknown as { result: { fileBinary: Buffer } };
-    return JSON.parse(response.result.fileBinary.toString('utf-8'));
+    const response = await dbx.filesDownload({ path }) as unknown as {
+      result: { fileBinary?: Buffer; fileBlob?: Blob };
+    };
+    const { fileBinary, fileBlob } = response.result;
+    let text: string;
+    if (fileBinary) {
+      text = fileBinary.toString('utf-8');
+    } else if (fileBlob) {
+      text = await fileBlob.text();
+    } else {
+      return [];
+    }
+    return JSON.parse(text);
   } catch (err: unknown) {
     const status = (err as { status?: number })?.status;
     if (status === 409 || status === 404) return [];
