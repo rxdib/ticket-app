@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { CATEGORIES } from '@/lib/constants';
 import imageCompression from 'browser-image-compression';
 import { getPendingPhoto, clearPendingPhoto } from '@/lib/photoStore';
+import { setSavePromise } from '@/lib/saveStore';
 
 function todayString(): string {
   return new Date().toISOString().split('T')[0];
@@ -16,7 +17,6 @@ export default function AddPage() {
   const [category, setCategory] = useState<string>(CATEGORIES[0]);
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -35,8 +35,8 @@ export default function AddPage() {
     if (!file) return;
 
     const compressed = await imageCompression(file, {
-      maxSizeMB: 1.5,
-      maxWidthOrHeight: 1920,
+      maxSizeMB: 0.6,
+      maxWidthOrHeight: 1280,
       useWebWorker: true,
     });
 
@@ -51,7 +51,6 @@ export default function AddPage() {
       return;
     }
 
-    setLoading(true);
     setError('');
 
     const formData = new FormData();
@@ -60,17 +59,21 @@ export default function AddPage() {
     formData.append('category', category);
     if (photo) formData.append('photo', photo, 'photo.jpg');
 
-    const res = await fetch('/api/tickets', {
+    // ✅ Lancer la sauvegarde en arrière-plan
+    const saveP = fetch('/api/tickets', {
       method: 'POST',
       body: formData,
+    }).then(async res => {
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error ?? 'Erreur serveur');
+      }
     });
 
-    if (!res.ok) {
-      setError("Erreur lors de l'enregistrement. Réessayez.");
-      setLoading(false);
-      return;
-    }
+    // Partager la promesse avec la home page pour qu'elle sache quand recharger
+    setSavePromise(saveP);
 
+    // ✅ Naviguer immédiatement — pas besoin d'attendre Dropbox
     router.push('/');
   }
 
@@ -173,10 +176,9 @@ export default function AddPage() {
       <div className="fixed bottom-8 left-0 right-0 flex justify-center px-5">
         <button
           onClick={handleSubmit}
-          disabled={loading}
-          className="w-full max-w-lg bg-green-700 text-white text-xl font-bold py-5 rounded-2xl shadow-lg active:bg-green-800 disabled:opacity-50"
+          className="w-full max-w-lg bg-green-700 text-white text-xl font-bold py-5 rounded-2xl shadow-lg active:bg-green-800"
         >
-          {loading ? 'Enregistrement...' : '✓ Enregistrer'}
+          ✓ Enregistrer
         </button>
       </div>
     </div>

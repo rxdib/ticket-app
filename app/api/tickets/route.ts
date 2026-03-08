@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 import { readTicketsJson, writeTicketsJson, uploadPhoto, uploadExcel } from '@/lib/dropbox';
 import { generateExcel } from '@/lib/excel';
 import type { Ticket } from '@/lib/types';
@@ -45,10 +46,16 @@ export async function POST(request: NextRequest) {
   const uniqueId = randomBytes(4).toString('hex');
   const photoFilename = photoFile ? `${date}_${uniqueId}.jpg` : '';
 
-  if (photoFile && photoFilename) {
-    const arrayBuffer = await photoFile.arrayBuffer();
-    await uploadPhoto(year, photoFilename, Buffer.from(arrayBuffer));
-  }
+  // Préparer le buffer photo avant les appels parallèles
+  const photoBuffer = photoFile ? Buffer.from(await photoFile.arrayBuffer()) : null;
+
+  // ✅ Lancer l'upload photo ET la lecture du JSON en parallèle
+  const [, tickets] = await Promise.all([
+    photoBuffer && photoFilename
+      ? uploadPhoto(year, photoFilename, photoBuffer)
+      : Promise.resolve(),
+    readTicketsJson(year),
+  ]);
 
   const ticket: Ticket = {
     id: `${date}_${uniqueId}`,
@@ -59,12 +66,18 @@ export async function POST(request: NextRequest) {
     createdAt: new Date().toISOString(),
   };
 
-  const tickets = await readTicketsJson(year);
   tickets.push(ticket);
   await writeTicketsJson(year, tickets);
 
-  const excelBuffer = await generateExcel(tickets, year);
-  await uploadExcel(year, excelBuffer);
+  // ✅ Générer et uploader l'Excel EN ARRIÈRE-PLAN (après la réponse)
+  after(async () => {
+    try {
+      const excelBuffer = await generateExcel(tickets, year);
+      await uploadExcel(year, excelBuffer);
+    } catch (err) {
+      console.error('[Excel background]', err);
+    }
+  });
 
   return NextResponse.json(ticket, { status: 201 });
 }

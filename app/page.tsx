@@ -5,6 +5,7 @@ import TicketList from './components/TicketList';
 import MonthFilter from './components/MonthFilter';
 import type { Ticket } from '@/lib/types';
 import { setPendingPhoto } from '@/lib/photoStore';
+import { takeSavePromise } from '@/lib/saveStore';
 import imageCompression from 'browser-image-compression';
 
 export default function HomePage() {
@@ -15,13 +16,16 @@ export default function HomePage() {
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
   async function handleCameraCapture(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    // ✅ Photo plus légère : 0.6 MB max, 1280px max (suffisant pour lire un ticket)
     const compressed = await imageCompression(file, {
-      maxSizeMB: 1.5,
-      maxWidthOrHeight: 1920,
+      maxSizeMB: 0.6,
+      maxWidthOrHeight: 1280,
       useWebWorker: true,
     });
     setPendingPhoto(compressed);
@@ -39,6 +43,28 @@ export default function HomePage() {
     }
     setLoading(false);
   }
+
+  // Au montage : vérifier si un ticket est en cours de sauvegarde
+  useEffect(() => {
+    const pending = takeSavePromise();
+    if (pending) {
+      setSaving(true);
+      setSaveError(false);
+      pending
+        .then(() => {
+          // ✅ Recharger la liste quand la sauvegarde est terminée
+          fetchTickets(selectedMonth, selectedYear);
+        })
+        .catch(() => {
+          setSaveError(true);
+        })
+        .finally(() => {
+          setSaving(false);
+        });
+    }
+    fetchTickets(selectedMonth, selectedYear);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     fetchTickets(selectedMonth, selectedYear);
@@ -67,6 +93,22 @@ export default function HomePage() {
           </p>
         )}
       </div>
+
+      {/* Bannière d'enregistrement en cours */}
+      {saving && (
+        <div className="bg-amber-50 border-b border-amber-200 px-5 py-3 flex items-center gap-3">
+          <span className="text-amber-600 text-lg animate-spin">⏳</span>
+          <span className="text-amber-800 font-medium">Enregistrement en cours…</span>
+        </div>
+      )}
+
+      {/* Bannière d'erreur */}
+      {saveError && (
+        <div className="bg-red-50 border-b border-red-200 px-5 py-3 flex items-center gap-3">
+          <span className="text-red-600 text-lg">⚠️</span>
+          <span className="text-red-800 font-medium">Erreur lors de l'enregistrement. Réessayez.</span>
+        </div>
+      )}
 
       {/* Liste */}
       <div className="px-5 py-5">
