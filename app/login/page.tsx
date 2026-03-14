@@ -13,19 +13,25 @@ export default function LoginPage() {
     setLoading(true);
     setError(false);
 
-    const res = await fetch('/api/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin }),
-    });
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin }),
+      });
 
-    if (res.ok) {
-      router.replace('/');
-    } else {
+      if (res.ok) {
+        router.replace('/');
+      } else {
+        setError(true);
+        setPin('');
+      }
+    } catch {
       setError(true);
       setPin('');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   return (
