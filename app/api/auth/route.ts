@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
   }
 
-  if (!pin || !timingSafeEqual(Buffer.from(pin), Buffer.from(appPin))) {
+  if (!pin || !timingSafeEqual(Buffer.from(hashPin(pin)), Buffer.from(hashPin(appPin)))) {
     return NextResponse.json({ error: 'PIN incorrect' }, { status: 401 });
   }
 
