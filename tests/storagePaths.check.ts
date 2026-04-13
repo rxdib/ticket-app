@@ -17,9 +17,9 @@ assert.deepEqual(getYearPathCandidates(2026, DESIRED_YEAR_PATH_TEMPLATE), [
   '/Tickets/2026',
 ]);
 
-assert.equal(buildPhotoFilename('2026-03-07', 7.90, []), '07-03-2026_7.90.jpg');
+assert.equal(buildPhotoFilename('2026-03-07', 7.90, []), '2026-03-07_7.90.jpg');
 
 assert.equal(
-  buildPhotoFilename('2026-03-07', 7.90, ['07-03-2026_7.90.jpg']),
-  '07-03-2026_7.90-2.jpg',
+  buildPhotoFilename('2026-03-07', 7.90, ['2026-03-07_7.90.jpg']),
+  '2026-03-07_7.90-2.jpg',
 );

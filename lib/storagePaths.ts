@@ -53,7 +53,7 @@ export function buildPhotoFilename(
   existingFilenames: string[],
   extension = 'jpg',
 ): string {
-  const baseName = `${formatPhotoDate(date)}_${amount.toFixed(2)}`;
+  const baseName = `${date}_${amount.toFixed(2)}`;
   const safeExtension = normalizeExtension(extension);
   const existing = new Set(existingFilenames.map((filename) => filename.toLowerCase()));
 

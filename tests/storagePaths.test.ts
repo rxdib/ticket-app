@@ -22,13 +22,13 @@ test('getYearPathCandidates prefers the quittance path and keeps the legacy fall
   ]);
 });
 
-test('buildPhotoFilename uses dd-mm-yyyy_amount when unique', () => {
-  assert.equal(buildPhotoFilename('2026-03-07', 7.90, []), '07-03-2026_7.90.jpg');
+test('buildPhotoFilename uses yyyy-mm-dd_amount when unique', () => {
+  assert.equal(buildPhotoFilename('2026-03-07', 7.90, []), '2026-03-07_7.90.jpg');
 });
 
 test('buildPhotoFilename appends an increment when the same file already exists', () => {
   assert.equal(
-    buildPhotoFilename('2026-03-07', 7.90, ['07-03-2026_7.90.jpg']),
-    '07-03-2026_7.90-2.jpg',
+    buildPhotoFilename('2026-03-07', 7.90, ['2026-03-07_7.90.jpg']),
+    '2026-03-07_7.90-2.jpg',
   );
 });
