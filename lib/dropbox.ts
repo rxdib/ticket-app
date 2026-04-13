@@ -93,24 +93,10 @@ async function pathExists(dbx: Dropbox, path: string): Promise<boolean> {
   }
 }
 
-async function getWritableYearPaths(dbx: Dropbox, year: number): Promise<string[]> {
-  const candidates = getYearPathCandidates(year);
-
-  if (candidates.length === 1) {
-    return candidates;
-  }
-
-  const [preferredPath, legacyPath] = candidates;
-
-  try {
-    if (await pathExists(dbx, preferredPath)) {
-      return [preferredPath, legacyPath];
-    }
-  } catch {
-    return [legacyPath];
-  }
-
-  return [legacyPath];
+async function getWritableYearPaths(_dbx: Dropbox, year: number): Promise<string[]> {
+  // Toujours écrire dans le chemin préféré (le dossier sera créé si besoin).
+  // La lecture reste multi-chemins pour garder accès aux anciennes données.
+  return [getYearPathCandidates(year)[0]];
 }
 
 async function uploadToCandidatePaths(
