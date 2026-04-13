@@ -49,10 +49,11 @@ function normalizeExtension(extension: string): string {
 
 export function buildPhotoFilename(
   date: string,
+  amount: number,
   existingFilenames: string[],
   extension = 'jpg',
 ): string {
-  const baseName = formatPhotoDate(date);
+  const baseName = `${formatPhotoDate(date)}_${amount.toFixed(2)}`;
   const safeExtension = normalizeExtension(extension);
   const existing = new Set(existingFilenames.map((filename) => filename.toLowerCase()));
 

@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     .filter((filename): filename is string => Boolean(filename));
 
   const photoFilename = photoArrayBuffer
-    ? buildPhotoFilename(date, existingPhotoFilenames)
+    ? buildPhotoFilename(date, amount, existingPhotoFilenames)
     : '';
 
   if (photoArrayBuffer && photoFilename) {
