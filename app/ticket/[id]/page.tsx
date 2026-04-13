@@ -18,9 +18,10 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
-    params.then(p => setId(p.id));
+    params.then((p) => setId(p.id));
   }, [params]);
 
   useEffect(() => {
@@ -29,7 +30,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     async function load() {
       const res = await fetch(`/api/tickets?year=${year}`);
       const tickets: Ticket[] = await res.json();
-      const found = tickets.find(t => t.id === id) ?? null;
+      const found = tickets.find((t) => t.id === id) ?? null;
       setTicket(found);
 
       if (found?.photoFilename) {
@@ -48,9 +49,23 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
 
   async function handleDelete() {
     if (!confirm('Supprimer ce ticket ?')) return;
+
     setDeleting(true);
-    await fetch(`/api/tickets/${id}?year=${year}`, { method: 'DELETE' });
-    router.push('/');
+    setDeleteError('');
+
+    try {
+      const res = await fetch(`/api/tickets/${id}?year=${year}`, { method: 'DELETE' });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error ?? 'Suppression impossible');
+      }
+
+      router.push('/');
+    } catch (err: unknown) {
+      setDeleteError(err instanceof Error ? err.message : 'Suppression impossible');
+      setDeleting(false);
+    }
   }
 
   if (loading) {
@@ -74,14 +89,12 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-green-700 text-white px-5 pt-12 pb-5 flex items-center gap-4">
         <button onClick={() => router.back()} className="text-white text-3xl font-light">‹</button>
         <h1 className="text-2xl font-bold">Détail du ticket</h1>
       </div>
 
       <div className="px-5 py-5 space-y-5">
-        {/* Photo */}
         {photoUrl && (
           <img
             src={photoUrl}
@@ -90,7 +103,6 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
           />
         )}
 
-        {/* Infos */}
         <div className="bg-white rounded-2xl p-5 shadow-sm space-y-4">
           <div>
             <p className="text-sm text-gray-500 uppercase tracking-wide">Date</p>
@@ -99,6 +111,12 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
           <div>
             <p className="text-sm text-gray-500 uppercase tracking-wide">Montant</p>
             <p className="text-2xl font-bold text-green-700">CHF {ticket.amount.toFixed(2)}</p>
+            {ticket.amount81 !== undefined && ticket.amount26 !== undefined && (
+              <div className="mt-1 space-y-0.5">
+                <p className="text-base text-gray-500">TVA 8.1% : CHF {ticket.amount81.toFixed(2)}</p>
+                <p className="text-base text-gray-500">TVA 2.6% : CHF {ticket.amount26.toFixed(2)}</p>
+              </div>
+            )}
           </div>
           <div>
             <p className="text-sm text-gray-500 uppercase tracking-wide">Catégorie</p>
@@ -110,13 +128,16 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
           </div>
         </div>
 
-        {/* Bouton supprimer */}
+        {deleteError && (
+          <p className="text-red-600 text-base bg-red-50 p-3 rounded-xl">{deleteError}</p>
+        )}
+
         <button
           onClick={handleDelete}
           disabled={deleting}
           className="w-full py-4 rounded-2xl border-2 border-red-300 text-red-600 text-lg font-semibold active:bg-red-50 disabled:opacity-50"
         >
-          {deleting ? 'Suppression...' : '🗑 Supprimer ce ticket'}
+          {deleting ? 'Suppression...' : 'Supprimer ce ticket'}
         </button>
       </div>
     </div>

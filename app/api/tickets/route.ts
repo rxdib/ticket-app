@@ -3,6 +3,7 @@ import { after } from 'next/server';
 import { readTicketsJson, writeTicketsJson, uploadPhoto, uploadExcel } from '@/lib/dropbox';
 import { generateExcel } from '@/lib/excel';
 import type { Ticket } from '@/lib/types';
+import { buildPhotoFilename } from '@/lib/storagePaths';
 import { randomBytes } from 'crypto';
 
 export async function GET(request: NextRequest) {
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
     let filtered = tickets;
     if (monthParam !== null) {
       const month = parseInt(monthParam);
-      filtered = tickets.filter(t => new Date(t.date).getMonth() === month);
+      filtered = tickets.filter((t) => new Date(t.date).getMonth() === month);
     }
 
     filtered.sort((a, b) => b.date.localeCompare(a.date));
@@ -34,33 +35,61 @@ export async function POST(request: NextRequest) {
   const formData = await request.formData();
 
   const date = formData.get('date') as string;
-  const amount = parseFloat(formData.get('amount') as string);
   const category = formData.get('category') as string;
   const photoFile = formData.get('photo') as File | null;
 
-  if (!date || isNaN(amount) || !category) {
+  if (!date || !category) {
     return NextResponse.json({ error: 'Champs manquants' }, { status: 400 });
+  }
+
+  // Montants : soit un montant simple, soit deux montants pour repas mixte
+  const raw81 = formData.get('amount81');
+  const raw26 = formData.get('amount26');
+  const rawAmount = formData.get('amount');
+
+  let amount: number;
+  let amount81: number | undefined;
+  let amount26: number | undefined;
+
+  if (raw81 !== null && raw26 !== null) {
+    amount81 = parseFloat(raw81 as string);
+    amount26 = parseFloat(raw26 as string);
+    if (isNaN(amount81) || isNaN(amount26) || amount81 <= 0 || amount26 <= 0) {
+      return NextResponse.json({ error: 'Montants invalides' }, { status: 400 });
+    }
+    amount = Math.round((amount81 + amount26) * 100) / 100;
+  } else {
+    amount = parseFloat(rawAmount as string);
+    if (isNaN(amount) || amount <= 0) {
+      return NextResponse.json({ error: 'Montant invalide' }, { status: 400 });
+    }
   }
 
   const year = new Date(date).getFullYear();
   const uniqueId = randomBytes(4).toString('hex');
-  const photoFilename = photoFile ? `${date}_${uniqueId}.jpg` : '';
 
-  // Préparer le buffer photo avant les appels parallèles
-  const photoBuffer = photoFile ? Buffer.from(await photoFile.arrayBuffer()) : null;
-
-  // ✅ Lancer l'upload photo ET la lecture du JSON en parallèle
-  const [, tickets] = await Promise.all([
-    photoBuffer && photoFilename
-      ? uploadPhoto(year, photoFilename, photoBuffer)
-      : Promise.resolve(),
+  const [tickets, photoArrayBuffer] = await Promise.all([
     readTicketsJson(year),
+    photoFile ? photoFile.arrayBuffer() : Promise.resolve(null),
   ]);
+
+  const existingPhotoFilenames = tickets
+    .map((ticket) => ticket.photoFilename)
+    .filter((filename): filename is string => Boolean(filename));
+
+  const photoFilename = photoArrayBuffer
+    ? buildPhotoFilename(date, existingPhotoFilenames)
+    : '';
+
+  if (photoArrayBuffer && photoFilename) {
+    await uploadPhoto(year, photoFilename, Buffer.from(photoArrayBuffer));
+  }
 
   const ticket: Ticket = {
     id: `${date}_${uniqueId}`,
     date,
     amount,
+    ...(amount81 !== undefined && amount26 !== undefined ? { amount81, amount26 } : {}),
     category,
     photoFilename,
     createdAt: new Date().toISOString(),
@@ -69,7 +98,6 @@ export async function POST(request: NextRequest) {
   tickets.push(ticket);
   await writeTicketsJson(year, tickets);
 
-  // ✅ Générer et uploader l'Excel EN ARRIÈRE-PLAN (après la réponse)
   after(async () => {
     try {
       const excelBuffer = await generateExcel(tickets, year);

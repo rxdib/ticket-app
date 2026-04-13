@@ -23,14 +23,17 @@ export async function generateExcel(tickets: Ticket[], year: number): Promise<Bu
     const sheet = workbook.addWorksheet(MONTHS_FR[m]);
 
     sheet.columns = [
-      { header: 'Date', key: 'date', width: 14 },
-      { header: 'Montant (CHF)', key: 'amount', width: 16 },
-      { header: 'Catégorie', key: 'category', width: 35 },
-      { header: 'Fichier photo', key: 'photoFilename', width: 30 },
+      { header: 'Date',          key: 'date',          width: 14 },
+      { header: 'Montant (CHF)', key: 'amount',         width: 16 },
+      { header: 'TVA 8.1%',      key: 'amount81',       width: 14 },
+      { header: 'TVA 2.6%',      key: 'amount26',       width: 14 },
+      { header: 'Catégorie',     key: 'category',       width: 35 },
+      { header: 'Fichier photo', key: 'photoFilename',  width: 30 },
     ];
 
-    sheet.getRow(1).font = { bold: true };
-    sheet.getRow(1).fill = {
+    const headerRow = sheet.getRow(1);
+    headerRow.font = { bold: true };
+    headerRow.fill = {
       type: 'pattern',
       pattern: 'solid',
       fgColor: { argb: 'FFD3E4CD' },
@@ -41,14 +44,18 @@ export async function generateExcel(tickets: Ticket[], year: number): Promise<Bu
     for (const ticket of sorted) {
       const [y, mo, d] = ticket.date.split('-');
       sheet.addRow({
-        date: `${d}.${mo}.${y}`,
-        amount: ticket.amount,
-        category: ticket.category,
+        date:          `${d}.${mo}.${y}`,
+        amount:        ticket.amount,
+        amount81:      ticket.amount81 ?? '',
+        amount26:      ticket.amount26 ?? '',
+        category:      ticket.category,
         photoFilename: ticket.photoFilename,
       });
     }
 
-    sheet.getColumn('amount').numFmt = '#,##0.00';
+    sheet.getColumn('amount').numFmt   = '#,##0.00';
+    sheet.getColumn('amount81').numFmt = '#,##0.00';
+    sheet.getColumn('amount26').numFmt = '#,##0.00';
   }
 
   if (workbook.worksheets.length === 0) {
@@ -58,4 +65,3 @@ export async function generateExcel(tickets: Ticket[], year: number): Promise<Bu
   const buffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(buffer);
 }
-

@@ -1,3 +1,5 @@
+export const MIXED_CATEGORY = 'Repas mixte (8.1%+2.6%)';
+
 export const CATEGORIES = [
   'Repas 8.1%',
   'Repas 2.6%',
