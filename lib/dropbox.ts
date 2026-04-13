@@ -9,6 +9,16 @@ type DownloadResponse = {
   };
 };
 
+/** Retourne "MM" depuis un nom de fichier "YYYY-MM-DD_..." */
+function monthSubfolder(filename: string): string {
+  return filename.slice(5, 7); // ex: "2026-01-05_7.90.jpg" → "01"
+}
+
+/** Chemin relatif d'une photo dans le dossier annuel */
+function photoRelPath(filename: string): string {
+  return `photos/${monthSubfolder(filename)}/${filename}`;
+}
+
 function getDropboxClient(): Dropbox {
   return new Dropbox({
     clientId: process.env.DROPBOX_APP_KEY!,
@@ -178,7 +188,7 @@ export async function writeTicketsJson(year: number, tickets: Ticket[]): Promise
 }
 
 export async function uploadPhoto(year: number, filename: string, buffer: Buffer): Promise<void> {
-  await uploadToCandidatePaths(year, `photos/${filename}`, buffer);
+  await uploadToCandidatePaths(year, photoRelPath(filename), buffer);
 }
 
 export async function deletePhoto(year: number, filename: string): Promise<void> {
@@ -188,7 +198,7 @@ export async function deletePhoto(year: number, filename: string): Promise<void>
 
   for (const yearPath of getYearPathCandidates(year)) {
     try {
-      await dbx.filesDeleteV2({ path: `${yearPath}/photos/${filename}` });
+      await dbx.filesDeleteV2({ path: `${yearPath}/${photoRelPath(filename)}` });
       deletedSomewhere = true;
     } catch (err: unknown) {
       if (isNotFoundError(err)) {
@@ -212,7 +222,7 @@ export async function getPhotoUrl(year: number, filename: string): Promise<strin
   for (const yearPath of getYearPathCandidates(year)) {
     try {
       const response = await dbx.filesGetTemporaryLink({
-        path: `${yearPath}/photos/${filename}`,
+        path: `${yearPath}/${photoRelPath(filename)}`,
       });
       return response.result.link;
     } catch (err: unknown) {
