@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import TicketList from './components/TicketList';
 import MonthFilter from './components/MonthFilter';
 import type { Ticket } from '@/lib/types';
@@ -81,7 +82,15 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-green-700 text-white px-5 pt-12 pb-6">
-        <h1 className="text-3xl font-bold mb-4">🧾 Mes Tickets</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-3xl font-bold">🧾 Mes Tickets</h1>
+          <Link
+            href="/remboursements"
+            className="text-green-100 text-sm font-semibold bg-green-800 px-3 py-2 rounded-xl active:bg-green-900"
+          >
+            💵 Remboursements
+          </Link>
+        </div>
         <MonthFilter
           selectedMonth={selectedMonth}
           selectedYear={selectedYear}

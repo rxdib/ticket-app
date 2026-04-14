@@ -6,7 +6,6 @@ const CATEGORY_26 = 'Repas 2.6%';
 
 function getTvaAmounts(ticket: Ticket): { tva81: number | ''; tva26: number | '' } {
   if (ticket.category === MIXED_CATEGORY) {
-    // Montants saisis séparément
     return {
       tva81: ticket.amount81 ?? '',
       tva26: ticket.amount26 ?? '',
@@ -44,6 +43,10 @@ export async function generateExcel(tickets: Ticket[], year: number): Promise<Bu
       { header: 'TVA 8.1%',      key: 'tva81',          width: 14 },
       { header: 'TVA 2.6%',      key: 'tva26',          width: 14 },
       { header: 'Catégorie',     key: 'category',       width: 35 },
+      { header: 'Paiement',      key: 'paymentMethod',  width: 12 },
+      { header: 'Payeur',        key: 'payer',          width: 12 },
+      { header: 'Remboursé',     key: 'reimbursed',     width: 12 },
+      { header: 'Note',          key: 'note',           width: 30 },
       { header: 'Fichier photo', key: 'photoFilename',  width: 35 },
     ];
 
@@ -60,12 +63,17 @@ export async function generateExcel(tickets: Ticket[], year: number): Promise<Bu
     for (const ticket of sorted) {
       const [y, mo, d] = ticket.date.split('-');
       const { tva81, tva26 } = getTvaAmounts(ticket);
+      const isCash = ticket.paymentMethod === 'cash';
       sheet.addRow({
         date:          `${d}.${mo}.${y}`,
         amount:        ticket.amount,
         tva81,
         tva26,
         category:      ticket.category,
+        paymentMethod: ticket.paymentMethod === 'cash' ? 'Cash' : 'Carte',
+        payer:         isCash ? (ticket.payer ?? '') : '',
+        reimbursed:    isCash ? (ticket.reimbursed ? 'Oui' : 'Non') : '',
+        note:          ticket.note ?? '',
         photoFilename: ticket.photoFilename,
       });
     }

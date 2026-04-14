@@ -7,4 +7,8 @@ export interface Ticket {
   category: string;       // une des 6 catégories
   photoFilename: string;  // ex: "07-03-2026.jpg" ou "07-03-2026-2.jpg"
   createdAt: string;      // ISO timestamp
+  paymentMethod?: 'card' | 'cash';
+  payer?: 'Robin' | 'Malek' | 'Kurt';
+  reimbursed?: boolean;
+  note?: string;
 }

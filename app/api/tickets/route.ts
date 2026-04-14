@@ -37,6 +37,9 @@ export async function POST(request: NextRequest) {
   const date = formData.get('date') as string;
   const category = formData.get('category') as string;
   const photoFile = formData.get('photo') as File | null;
+  const paymentMethod = (formData.get('paymentMethod') as string | null) ?? 'card';
+  const payer = formData.get('payer') as string | null;
+  const note = formData.get('note') as string | null;
 
   if (!date || !category) {
     return NextResponse.json({ error: 'Champs manquants' }, { status: 400 });
@@ -93,6 +96,9 @@ export async function POST(request: NextRequest) {
     category,
     photoFilename,
     createdAt: new Date().toISOString(),
+    paymentMethod: (paymentMethod === 'cash' ? 'cash' : 'card'),
+    ...(paymentMethod === 'cash' && payer ? { payer: payer as Ticket['payer'] } : {}),
+    ...(note ? { note } : {}),
   };
 
   tickets.push(ticket);

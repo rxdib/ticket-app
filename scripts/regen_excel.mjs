@@ -46,6 +46,10 @@ for (let m = 0; m < 12; m++) {
     { header: 'TVA 8.1%',      key: 'tva81',          width: 14 },
     { header: 'TVA 2.6%',      key: 'tva26',          width: 14 },
     { header: 'Categorie',     key: 'category',       width: 35 },
+    { header: 'Paiement',      key: 'paymentMethod',  width: 12 },
+    { header: 'Payeur',        key: 'payer',          width: 12 },
+    { header: 'Rembourse',     key: 'reimbursed',     width: 12 },
+    { header: 'Note',          key: 'note',           width: 30 },
     { header: 'Fichier photo', key: 'photoFilename',  width: 35 },
   ];
 
@@ -57,12 +61,17 @@ for (let m = 0; m < 12; m++) {
   for (const t of sorted) {
     const [y, mo, d] = t.date.split('-');
     const { tva81, tva26 } = getTvaAmounts(t);
+    const isCash = t.paymentMethod === 'cash';
     sheet.addRow({
       date:          `${d}.${mo}.${y}`,
       amount:        t.amount,
       tva81,
       tva26,
       category:      t.category,
+      paymentMethod: t.paymentMethod === 'cash' ? 'Cash' : 'Carte',
+      payer:         isCash ? (t.payer ?? '') : '',
+      reimbursed:    isCash ? (t.reimbursed ? 'Oui' : 'Non') : '',
+      note:          t.note ?? '',
       photoFilename: t.photoFilename,
     });
   }

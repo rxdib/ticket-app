@@ -1,7 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { CATEGORIES, MIXED_CATEGORY } from '@/lib/constants';
+import { CATEGORIES, MIXED_CATEGORY, PAYERS } from '@/lib/constants';
 import imageCompression from 'browser-image-compression';
 import { getPendingPhoto, clearPendingPhoto } from '@/lib/photoStore';
 import { setSavePromise } from '@/lib/saveStore';
@@ -17,12 +17,16 @@ export default function AddPage() {
   const [amount81, setAmount81] = useState('');
   const [amount26, setAmount26] = useState('');
   const [category, setCategory] = useState<string>(CATEGORIES[0]);
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('card');
+  const [payer, setPayer] = useState<string>(PAYERS[0]);
+  const [note, setNote] = useState('');
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isMixed = category === MIXED_CATEGORY;
+  const isCash = paymentMethod === 'cash';
 
   // Récupérer la photo prise depuis la home page
   useEffect(() => {
@@ -68,6 +72,9 @@ export default function AddPage() {
     const formData = new FormData();
     formData.append('date', date);
     formData.append('category', category);
+    formData.append('paymentMethod', paymentMethod);
+    if (isCash) formData.append('payer', payer);
+    if (note.trim()) formData.append('note', note.trim());
     if (photo) formData.append('photo', photo, 'photo.jpg');
 
     if (isMixed) {
@@ -144,7 +151,7 @@ export default function AddPage() {
           />
         </div>
 
-        {/* Catégorie — placée avant le montant pour que les champs changent selon la sélection */}
+        {/* Catégorie */}
         <div>
           <label className="block text-lg font-semibold text-gray-700 mb-2">Catégorie</label>
           <select
@@ -158,7 +165,7 @@ export default function AddPage() {
           </select>
         </div>
 
-        {/* Montant — simple ou double selon la catégorie */}
+        {/* Montant */}
         {isMixed ? (
           <div className="space-y-3">
             <label className="block text-lg font-semibold text-gray-700">Montants (CHF)</label>
@@ -214,6 +221,72 @@ export default function AddPage() {
             />
           </div>
         )}
+
+        {/* Mode de paiement */}
+        <div>
+          <label className="block text-lg font-semibold text-gray-700 mb-2">Paiement</label>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('card')}
+              className={`flex-1 py-4 rounded-2xl text-lg font-semibold border-2 transition-colors ${
+                !isCash
+                  ? 'bg-green-700 border-green-700 text-white'
+                  : 'bg-white border-gray-200 text-gray-600'
+              }`}
+            >
+              💳 Carte
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('cash')}
+              className={`flex-1 py-4 rounded-2xl text-lg font-semibold border-2 transition-colors ${
+                isCash
+                  ? 'bg-green-700 border-green-700 text-white'
+                  : 'bg-white border-gray-200 text-gray-600'
+              }`}
+            >
+              💵 Cash
+            </button>
+          </div>
+        </div>
+
+        {/* Payeur — uniquement si cash */}
+        {isCash && (
+          <div>
+            <label className="block text-lg font-semibold text-gray-700 mb-2">Payé par</label>
+            <div className="flex gap-3">
+              {PAYERS.map(p => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPayer(p)}
+                  className={`flex-1 py-4 rounded-2xl text-lg font-semibold border-2 transition-colors ${
+                    payer === p
+                      ? 'bg-green-700 border-green-700 text-white'
+                      : 'bg-white border-gray-200 text-gray-600'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Note (optionnel) */}
+        <div>
+          <label className="block text-lg font-semibold text-gray-700 mb-2">
+            Note <span className="text-base font-normal text-gray-400">(optionnel)</span>
+          </label>
+          <input
+            type="text"
+            placeholder="Ex: déjeuner avec client..."
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            className="w-full text-lg p-4 rounded-2xl border-2 border-gray-200 bg-white"
+          />
+        </div>
 
         {error && (
           <p className="text-red-600 text-base bg-red-50 p-3 rounded-xl">{error}</p>

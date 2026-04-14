@@ -19,6 +19,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [reimbursing, setReimbursing] = useState(false);
 
   useEffect(() => {
     params.then((p) => setId(p.id));
@@ -68,6 +69,25 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     }
   }
 
+  async function handleReimburse() {
+    if (!ticket) return;
+    setReimbursing(true);
+    try {
+      const newValue = !ticket.reimbursed;
+      const res = await fetch(`/api/tickets/${id}?year=${year}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reimbursed: newValue }),
+      });
+      if (res.ok) {
+        const updated: Ticket = await res.json();
+        setTicket(updated);
+      }
+    } finally {
+      setReimbursing(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-400 text-xl">
@@ -86,6 +106,8 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
       </div>
     );
   }
+
+  const isCash = ticket.paymentMethod === 'cash';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -122,11 +144,57 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
             <p className="text-sm text-gray-500 uppercase tracking-wide">Catégorie</p>
             <p className="text-2xl font-semibold text-gray-800">{ticket.category}</p>
           </div>
+
+          {/* Paiement */}
+          <div>
+            <p className="text-sm text-gray-500 uppercase tracking-wide">Paiement</p>
+            <p className="text-xl font-semibold text-gray-800">
+              {isCash ? `💵 Cash${ticket.payer ? ` — ${ticket.payer}` : ''}` : '💳 Carte'}
+            </p>
+          </div>
+
+          {/* Remboursement — uniquement si cash */}
+          {isCash && (
+            <div>
+              <p className="text-sm text-gray-500 uppercase tracking-wide">Remboursement</p>
+              <p className={`text-xl font-semibold ${ticket.reimbursed ? 'text-green-600' : 'text-amber-600'}`}>
+                {ticket.reimbursed ? '✓ Remboursé' : 'En attente'}
+              </p>
+            </div>
+          )}
+
+          {/* Note */}
+          {ticket.note && (
+            <div>
+              <p className="text-sm text-gray-500 uppercase tracking-wide">Note</p>
+              <p className="text-xl text-gray-800">{ticket.note}</p>
+            </div>
+          )}
+
           <div>
             <p className="text-sm text-gray-500 uppercase tracking-wide">Fichier</p>
             <p className="text-base text-gray-600 font-mono">{ticket.photoFilename || '—'}</p>
           </div>
         </div>
+
+        {/* Bouton remboursement */}
+        {isCash && (
+          <button
+            onClick={handleReimburse}
+            disabled={reimbursing}
+            className={`w-full py-4 rounded-2xl border-2 text-lg font-semibold transition-colors disabled:opacity-50 ${
+              ticket.reimbursed
+                ? 'border-gray-300 text-gray-500 active:bg-gray-50'
+                : 'border-green-500 text-green-700 active:bg-green-50'
+            }`}
+          >
+            {reimbursing
+              ? 'Mise à jour...'
+              : ticket.reimbursed
+              ? 'Marquer non remboursé'
+              : '✓ Marquer comme remboursé'}
+          </button>
+        )}
 
         {deleteError && (
           <p className="text-red-600 text-base bg-red-50 p-3 rounded-xl">{deleteError}</p>

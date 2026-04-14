@@ -12,6 +12,16 @@ function formatDate(dateStr: string): string {
   return `${d}.${m}.${y}`;
 }
 
+function PaymentBadge({ ticket }: { ticket: Ticket }) {
+  if (!ticket.paymentMethod || ticket.paymentMethod === 'card') return null;
+  return (
+    <span className="text-sm bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+      💵 {ticket.payer ?? 'Cash'}
+      {ticket.reimbursed && ' ✓'}
+    </span>
+  );
+}
+
 export default function TicketList({ tickets, year }: Props) {
   if (tickets.length === 0) {
     return (
@@ -32,6 +42,9 @@ export default function TicketList({ tickets, year }: Props) {
             <div>
               <p className="text-xl font-semibold text-gray-800">{formatDate(ticket.date)}</p>
               <p className="text-base text-gray-500 mt-0.5">{ticket.category}</p>
+              <div className="mt-1">
+                <PaymentBadge ticket={ticket} />
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <p className="text-xl font-bold text-green-700">CHF {ticket.amount.toFixed(2)}</p>
