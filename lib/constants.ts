@@ -1,7 +1,8 @@
 export const MIXED_CATEGORY = 'Repas mixte (8.1%+2.6%)';
 export const CATEGORY_26 = 'Repas 2.6%';
 export const PAYERS = ['Robin', 'Malek', 'Kurt'] as const;
-export type Payer = typeof PAYERS[number];
+export const PAYERS_SPLIT = 'Robin/Malek' as const;
+export type Payer = typeof PAYERS[number] | typeof PAYERS_SPLIT;
 
 export const CATEGORIES = [
   'Repas 8.1%',

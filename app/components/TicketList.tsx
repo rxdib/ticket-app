@@ -14,6 +14,18 @@ function formatDate(dateStr: string): string {
 
 function PaymentBadge({ ticket }: { ticket: Ticket }) {
   if (!ticket.paymentMethod || ticket.paymentMethod === 'card') return null;
+
+  if (ticket.payer === 'Robin/Malek') {
+    const r = ticket.reimbursedRobin;
+    const m = ticket.reimbursedMalek;
+    const mark = r && m ? ' ✓✓' : r ? ' ✓R' : m ? ' ✓M' : '';
+    return (
+      <span className="text-sm bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">
+        💵 50/50{mark}
+      </span>
+    );
+  }
+
   return (
     <span className="text-sm bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
       💵 {ticket.payer ?? 'Cash'}

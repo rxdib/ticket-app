@@ -1,7 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { CATEGORIES, MIXED_CATEGORY, PAYERS } from '@/lib/constants';
+import { CATEGORIES, MIXED_CATEGORY, PAYERS, PAYERS_SPLIT } from '@/lib/constants';
 import imageCompression from 'browser-image-compression';
 import { getPendingPhoto, clearPendingPhoto } from '@/lib/photoStore';
 import { setSavePromise } from '@/lib/saveStore';
@@ -255,7 +255,7 @@ export default function AddPage() {
         {isCash && (
           <div>
             <label className="block text-lg font-semibold text-gray-700 mb-2">Payé par</label>
-            <div className="flex gap-3">
+            <div className="flex gap-2 flex-wrap">
               {PAYERS.map(p => (
                 <button
                   key={p}
@@ -270,6 +270,17 @@ export default function AddPage() {
                   {p}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => setPayer(PAYERS_SPLIT)}
+                className={`w-full py-4 rounded-2xl text-lg font-semibold border-2 transition-colors ${
+                  payer === PAYERS_SPLIT
+                    ? 'bg-green-700 border-green-700 text-white'
+                    : 'bg-white border-gray-200 text-gray-600'
+                }`}
+              >
+                50/50 Robin / Malek
+              </button>
             </div>
           </div>
         )}

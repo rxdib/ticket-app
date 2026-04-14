@@ -9,7 +9,11 @@ export async function PATCH(
   const { id } = await params;
   const yearParam = new URL(request.url).searchParams.get('year');
   const year = yearParam ? parseInt(yearParam) : new Date().getFullYear();
-  const body = await request.json() as { reimbursed?: boolean };
+  const body = await request.json() as {
+    reimbursed?: boolean;
+    reimbursedRobin?: boolean;
+    reimbursedMalek?: boolean;
+  };
 
   const tickets = await readTicketsJson(year);
   const idx = tickets.findIndex(t => t.id === id);
@@ -18,7 +22,12 @@ export async function PATCH(
     return NextResponse.json({ error: 'Ticket non trouvé' }, { status: 404 });
   }
 
-  tickets[idx] = { ...tickets[idx], reimbursed: body.reimbursed ?? true };
+  const patch: Partial<typeof tickets[0]> = {};
+  if (body.reimbursed !== undefined)       patch.reimbursed = body.reimbursed;
+  if (body.reimbursedRobin !== undefined)  patch.reimbursedRobin = body.reimbursedRobin;
+  if (body.reimbursedMalek !== undefined)  patch.reimbursedMalek = body.reimbursedMalek;
+
+  tickets[idx] = { ...tickets[idx], ...patch };
   await writeTicketsJson(year, tickets);
 
   return NextResponse.json(tickets[idx]);

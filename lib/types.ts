@@ -8,7 +8,9 @@ export interface Ticket {
   photoFilename: string;  // ex: "07-03-2026.jpg" ou "07-03-2026-2.jpg"
   createdAt: string;      // ISO timestamp
   paymentMethod?: 'card' | 'cash';
-  payer?: 'Robin' | 'Malek' | 'Kurt';
-  reimbursed?: boolean;
+  payer?: 'Robin' | 'Malek' | 'Kurt' | 'Robin/Malek';
+  reimbursed?: boolean;        // pour payer simple (Robin, Malek, Kurt)
+  reimbursedRobin?: boolean;   // pour 50/50 Robin/Malek
+  reimbursedMalek?: boolean;   // pour 50/50 Robin/Malek
   note?: string;
 }

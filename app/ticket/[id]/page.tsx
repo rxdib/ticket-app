@@ -19,7 +19,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
-  const [reimbursing, setReimbursing] = useState(false);
+  const [reimbursing, setReimbursing] = useState<null | 'simple' | 'robin' | 'malek'>(null);
 
   useEffect(() => {
     params.then((p) => setId(p.id));
@@ -69,22 +69,22 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     }
   }
 
-  async function handleReimburse() {
+  async function handleReimburse(field: 'reimbursed' | 'reimbursedRobin' | 'reimbursedMalek', current: boolean) {
     if (!ticket) return;
-    setReimbursing(true);
+    const key = field === 'reimbursedRobin' ? 'robin' : field === 'reimbursedMalek' ? 'malek' : 'simple';
+    setReimbursing(key);
     try {
-      const newValue = !ticket.reimbursed;
       const res = await fetch(`/api/tickets/${id}?year=${year}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reimbursed: newValue }),
+        body: JSON.stringify({ [field]: !current }),
       });
       if (res.ok) {
         const updated: Ticket = await res.json();
         setTicket(updated);
       }
     } finally {
-      setReimbursing(false);
+      setReimbursing(null);
     }
   }
 
@@ -108,6 +108,8 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   }
 
   const isCash = ticket.paymentMethod === 'cash';
+  const isSplit = ticket.payer === 'Robin/Malek';
+  const half = ticket.amount / 2;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -154,7 +156,20 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
           </div>
 
           {/* Remboursement — uniquement si cash */}
-          {isCash && (
+          {isCash && isSplit && (
+            <div>
+              <p className="text-sm text-gray-500 uppercase tracking-wide mb-1">Remboursement (50/50)</p>
+              <div className="space-y-1">
+                <p className={`text-base font-semibold ${ticket.reimbursedRobin ? 'text-green-600' : 'text-amber-600'}`}>
+                  Robin — CHF {half.toFixed(2)} — {ticket.reimbursedRobin ? '✓ Remboursé' : 'En attente'}
+                </p>
+                <p className={`text-base font-semibold ${ticket.reimbursedMalek ? 'text-green-600' : 'text-amber-600'}`}>
+                  Malek — CHF {half.toFixed(2)} — {ticket.reimbursedMalek ? '✓ Remboursé' : 'En attente'}
+                </p>
+              </div>
+            </div>
+          )}
+          {isCash && !isSplit && (
             <div>
               <p className="text-sm text-gray-500 uppercase tracking-wide">Remboursement</p>
               <p className={`text-xl font-semibold ${ticket.reimbursed ? 'text-green-600' : 'text-amber-600'}`}>
@@ -177,18 +192,54 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
           </div>
         </div>
 
-        {/* Bouton remboursement */}
-        {isCash && (
+        {/* Boutons remboursement */}
+        {isCash && isSplit && (
+          <div className="space-y-3">
+            {/* Robin */}
+            <button
+              onClick={() => handleReimburse('reimbursedRobin', !!ticket.reimbursedRobin)}
+              disabled={reimbursing !== null}
+              className={`w-full py-4 rounded-2xl border-2 text-lg font-semibold transition-colors disabled:opacity-50 ${
+                ticket.reimbursedRobin
+                  ? 'border-gray-300 text-gray-500 active:bg-gray-50'
+                  : 'border-green-500 text-green-700 active:bg-green-50'
+              }`}
+            >
+              {reimbursing === 'robin'
+                ? 'Mise à jour...'
+                : ticket.reimbursedRobin
+                ? 'Robin — Annuler remboursement'
+                : '✓ Robin remboursé (CHF ' + half.toFixed(2) + ')'}
+            </button>
+            {/* Malek */}
+            <button
+              onClick={() => handleReimburse('reimbursedMalek', !!ticket.reimbursedMalek)}
+              disabled={reimbursing !== null}
+              className={`w-full py-4 rounded-2xl border-2 text-lg font-semibold transition-colors disabled:opacity-50 ${
+                ticket.reimbursedMalek
+                  ? 'border-gray-300 text-gray-500 active:bg-gray-50'
+                  : 'border-green-500 text-green-700 active:bg-green-50'
+              }`}
+            >
+              {reimbursing === 'malek'
+                ? 'Mise à jour...'
+                : ticket.reimbursedMalek
+                ? 'Malek — Annuler remboursement'
+                : '✓ Malek remboursé (CHF ' + half.toFixed(2) + ')'}
+            </button>
+          </div>
+        )}
+        {isCash && !isSplit && (
           <button
-            onClick={handleReimburse}
-            disabled={reimbursing}
+            onClick={() => handleReimburse('reimbursed', !!ticket.reimbursed)}
+            disabled={reimbursing !== null}
             className={`w-full py-4 rounded-2xl border-2 text-lg font-semibold transition-colors disabled:opacity-50 ${
               ticket.reimbursed
                 ? 'border-gray-300 text-gray-500 active:bg-gray-50'
                 : 'border-green-500 text-green-700 active:bg-green-50'
             }`}
           >
-            {reimbursing
+            {reimbursing === 'simple'
               ? 'Mise à jour...'
               : ticket.reimbursed
               ? 'Marquer non remboursé'
