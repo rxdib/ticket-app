@@ -1,3 +1,13 @@
+export interface Payment {
+  id: string;
+  date: string;           // YYYY-MM-DD
+  recipient: string;      // 'Robin' | 'Malek' | 'Kurt'
+  amount: number;         // CHF versé
+  note?: string;
+  ticketsMarked: string[]; // IDs des tickets marqués remboursés
+  createdAt: string;
+}
+
 export interface Ticket {
   id: string;
   date: string;           // format YYYY-MM-DD

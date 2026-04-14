@@ -1,5 +1,5 @@
 import { Dropbox } from 'dropbox';
-import type { Ticket } from './types';
+import type { Ticket, Payment } from './types';
 import { getYearPathCandidates } from './storagePaths';
 
 type DownloadResponse = {
@@ -185,6 +185,29 @@ export async function readTicketsJson(year: number): Promise<Ticket[]> {
 
 export async function writeTicketsJson(year: number, tickets: Ticket[]): Promise<void> {
   await uploadToCandidatePaths(year, 'tickets.json', JSON.stringify(tickets, null, 2));
+}
+
+export async function readPaymentsJson(year: number): Promise<Payment[]> {
+  const dbx = getDropboxClient();
+
+  for (const yearPath of getYearPathCandidates(year)) {
+    try {
+      const response = (await dbx.filesDownload({
+        path: `${yearPath}/payments.json`,
+      })) as unknown as DownloadResponse;
+      const text = await decodeDownload(response);
+      if (text) return JSON.parse(text) as Payment[];
+    } catch (err: unknown) {
+      if (isNotFoundError(err)) continue;
+      throw err;
+    }
+  }
+
+  return [];
+}
+
+export async function writePaymentsJson(year: number, payments: Payment[]): Promise<void> {
+  await uploadToCandidatePaths(year, 'payments.json', JSON.stringify(payments, null, 2));
 }
 
 export async function uploadPhoto(year: number, filename: string, buffer: Buffer): Promise<void> {
