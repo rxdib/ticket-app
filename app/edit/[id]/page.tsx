@@ -95,7 +95,7 @@ export default function EditPage({ params }: { params: Promise<{ id: string }> }
         const b = await res.json().catch(() => ({}));
         throw new Error(b?.error ?? 'Erreur serveur');
       }
-      router.push(`/ticket/${id}?year=${year}`);
+      router.push('/');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erreur');
       setSaving(false);
