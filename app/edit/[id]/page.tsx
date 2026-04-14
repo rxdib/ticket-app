@@ -112,9 +112,17 @@ export default function EditPage({ params }: { params: Promise<{ id: string }> }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-green-700 text-white px-5 pt-12 pb-5 flex items-center gap-4">
-        <button onClick={() => router.back()} className="text-white text-3xl font-light">‹</button>
-        <h1 className="text-2xl font-bold">Modifier le ticket</h1>
+      <div className="bg-green-700 text-white px-5 pt-12 pb-5 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <button onClick={() => router.back()} className="text-white text-3xl font-light">‹</button>
+          <h1 className="text-2xl font-bold">Modifier le ticket</h1>
+        </div>
+        <button
+          onClick={() => router.push('/')}
+          className="text-green-100 text-base font-semibold bg-green-800 px-3 py-2 rounded-xl active:bg-green-900"
+        >
+          🏠 Accueil
+        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="px-5 py-5 space-y-5 pb-32">
