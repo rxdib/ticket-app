@@ -131,9 +131,26 @@ export default function AddPage() {
             onChange={handlePhotoChange}
           />
           {photoPreview ? (
-            <div className="relative" onClick={() => fileInputRef.current?.click()}>
-              <img src={photoPreview} alt="Photo du ticket" className="w-full rounded-2xl object-cover max-h-64" />
-              <div className="absolute bottom-3 right-3 bg-black/50 text-white text-sm px-3 py-1 rounded-full">Changer</div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 bg-green-50 border border-green-300 rounded-xl px-3 py-2">
+                <span className="text-green-600 text-xl">✓</span>
+                <span className="text-green-700 font-semibold text-base">Photo prise</span>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="ml-auto text-sm text-green-700 underline"
+                >
+                  Reprendre
+                </button>
+              </div>
+              <div className="relative" onClick={() => fileInputRef.current?.click()}>
+                <img
+                  src={photoPreview}
+                  alt="Photo du ticket"
+                  className="w-full rounded-2xl object-contain bg-gray-100"
+                  style={{ maxHeight: '60vh' }}
+                />
+              </div>
             </div>
           ) : (
             <button
